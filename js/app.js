@@ -1,19 +1,38 @@
 let allCountries = [];
 
+        
         async function loadAtlas() {
           try {
-            const res = await fetch('/api/atlas/countries');
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error);
+            // REST Countries API (v3.1) doğrudan istemci çağrısı
+            const res = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2,capital,region,subregion,population,flags,currencies,languages,borders,area');
+            if (!res.ok) throw new Error('API erişim hatası');
+            const rawData = await res.json();
 
-            allCountries = data.countries || [];
+            // API verisini orijinal uygulamanın beklediği formata dönüştür
+            allCountries = rawData.map(c => ({
+              cca2: c.cca2,
+              commonName: c.name?.common || '',
+              officialName: c.name?.official || '',
+              capital: c.capital ? c.capital[0] : 'Belirtilmemiş',
+              flagSvg: c.flags?.svg || '',
+              region: c.region || '',
+              subregion: c.subregion || '',
+              population: c.population || 0,
+              area: c.area || 0,
+              currencies: c.currencies ? Object.values(c.currencies).map(cur => `${cur.name} (${cur.symbol || ''})`).join(', ') : 'Bilinmiyor',
+              languages: c.languages ? Object.values(c.languages).join(', ') : 'Bilinmiyor',
+              borders: c.borders || []
+            })).sort((a, b) => a.commonName.localeCompare(b.commonName));
+
             document.getElementById('countries-loading').classList.add('hidden');
             document.getElementById('countries-grid').classList.remove('hidden');
             filterCountries();
           } catch(err) {
-            document.getElementById('countries-loading').innerHTML = '<span class="text-rose-500 font-medium text-sm">Ülkeler arşivi yüklenemedi.</span>';
+            console.error('Atlas Load Error:', err);
+            document.getElementById('countries-loading').innerHTML = '<span class="text-rose-500 font-medium text-sm">Ülkeler arşivi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.</span>';
           }
         }
+
 
         function filterCountries() {
           const q = (document.getElementById('atlas-search').value || '').trim().toLowerCase();
@@ -90,3 +109,9 @@ let allCountries = [];
         }
 
         document.addEventListener('DOMContentLoaded', loadAtlas);
+
+
+window.loadAtlas = loadAtlas;
+window.filterCountries = filterCountries;
+window.openModal = openModal;
+window.closeModal = closeModal;
