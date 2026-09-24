@@ -1,37 +1,23 @@
 let allCountries = [];
 
         
+        
         async function loadAtlas() {
           try {
-            // REST Countries API (v3.1) doğrudan istemci çağrısı
-            const res = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2,capital,region,subregion,population,flags,currencies,languages,borders,area');
-            if (!res.ok) throw new Error('API erişim hatası');
-            const rawData = await res.json();
-
-            // API verisini orijinal uygulamanın beklediği formata dönüştür
-            allCountries = rawData.map(c => ({
-              cca2: c.cca2,
-              commonName: c.name?.common || '',
-              officialName: c.name?.official || '',
-              capital: c.capital ? c.capital[0] : 'Belirtilmemiş',
-              flagSvg: c.flags?.svg || '',
-              region: c.region || '',
-              subregion: c.subregion || '',
-              population: c.population || 0,
-              area: c.area || 0,
-              currencies: c.currencies ? Object.values(c.currencies).map(cur => `${cur.name} (${cur.symbol || ''})`).join(', ') : 'Bilinmiyor',
-              languages: c.languages ? Object.values(c.languages).join(', ') : 'Bilinmiyor',
-              borders: c.borders || []
-            })).sort((a, b) => a.commonName.localeCompare(b.commonName));
+            // Veriyi yerel JSON dosyasından çek (CORS sorununu tamamen çözer)
+            const res = await fetch('data/countries.json');
+            if (!res.ok) throw new Error('Veri dosyası yüklenemedi');
+            allCountries = await res.json();
 
             document.getElementById('countries-loading').classList.add('hidden');
             document.getElementById('countries-grid').classList.remove('hidden');
             filterCountries();
           } catch(err) {
             console.error('Atlas Load Error:', err);
-            document.getElementById('countries-loading').innerHTML = '<span class="text-rose-500 font-medium text-sm">Ülkeler arşivi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.</span>';
+            document.getElementById('countries-loading').innerHTML = '<span class="text-rose-500 font-medium text-sm">Ülkeler arşivi yüklenemedi. Lütfen sayfayı yenileyin.</span>';
           }
         }
+
 
 
         function filterCountries() {
